@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require_relative "../config/environment"
+require "solid_queue/cli"
+require "solid_queue_pg/processes"
+
+SolidQueue::Cli.start(ARGV)
