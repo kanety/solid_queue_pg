@@ -1,0 +1,54 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [3.1, 3.2, 3.3, 3.4]
+        gemfile: ['rails72', 'rails80']
+        solid_queue: [1.1]
+        exclude:
+          - ruby: 3.1
+            gemfile: rails80
+
+    name: ruby ${{ matrix.ruby }}, ${{ matrix.gemfile }}, solid_queue ${{ matrix.solid_queue }}
+
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
+      SOLID_QUEUE_VERSION: ${{ matrix.solid_queue }}.0
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+    - name: Bundle list
+      run: |
+        bundle list
+    - name: Prepare test
+      run: |
+        cd spec/dummy
+        BUNDLE_GEMFILE=../../${{ env.BUNDLE_GEMFILE }} RAILS_ENV=test bundle exec rake db:create db:migrate
+        cd ../..
+    - name: Run test
+      run: |
+        bundle exec rspec
+    - name: Show log
+      run: |
+        cat spec/dummy/log/test.log

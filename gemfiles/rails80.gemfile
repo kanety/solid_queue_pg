@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+gem "rails", "~> 8.0.0"
+gem "solid_queue", "~> #{ENV['SOLID_QUEUE_VERSION']}"
+gem "pg"
+
+gemspec path: "../"
